@@ -1,16 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <time.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <pthread.h>
 #include <math.h>
 
 #define K 16
 #define N 200
 
-pthread_t thread[K];
 
 struct param_thread{
 	int i;	//l'offset
@@ -31,6 +27,7 @@ void *thread_action(void *p) {
 }
 
 void creat_thread(int iteration, param_thread *param) {
+	pthread_t thread[K];
 	//on créer nos K thread et on en profite pour initialiser la cellule à parcourir
     for (int i = 0; i < K; i++) {
 		param[i].iteration = iteration;
