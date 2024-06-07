@@ -1,0 +1,8 @@
+
+
+1) Pas de 2 car après le 1er tour on auras que des nombre premier et un nombre premier + un nombre premier = nombre pair
+Donc on peux en sauter 1 sur 2 directement
+
+il faut cependant retirer tous les chiffres pair avant et donc faire le 1er tour ou directment le 2 et ne pas les parcourirs par défault ni les stocker
+
+2)Deja expliquer
