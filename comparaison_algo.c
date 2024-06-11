@@ -2,33 +2,104 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 #include <math.h>
 #include <errno.h>
-#include <sys/wait.h>
+#include<sys/wait.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/sem.h>
+#include <sys/sem.h> 
 
-#define NOMBRE_THREAD 7
+#define NOMBRE_THREAD 5
 #define NOMBRE_PREMIER 4000000
+#define REPETITION 100
+#define N_SEM NOMBRE_THREAD 
 
-typedef struct param_thread {
+struct param_thread {
     int i; // l'offset
-    unsigned int *tab_addr; // le tableau des chiffres
+    int *tab_addr; // le tableau des chiffres
     int iteration; // la cellule à parcourir
-} param_thread;
+} typedef param_thread;
 
 void *thread_action(void *p);
+void *thread_action_opti(void *p);
+void creat_thread_opti(param_thread *param, pthread_t *threads);
+int thread();
+int thread_opti();
+int thread_opti();
+int syncro_opti();
 void create_threads(param_thread *param, pthread_t *threads);
-int V(int num);
-int P(int num);
+int V();
+int P();
 int detruire_semaphore();
 int init_semaphore();
 
 static int sem_id = -1; // Identifiant du groupe de sémaphores
 
+
 int main(int argc, char *argv[]) {
-    param_thread *params = (param_thread *)malloc(sizeof(param_thread) * NOMBRE_THREAD);
+    FILE *f = fopen("out.csv", "w");
+        for (int j = 0; j < REPETITION; j++) {
+            struct timespec start, end;
+            clock_gettime(CLOCK_MONOTONIC, &start);
+			thread_opti();
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            long double duree = (end.tv_sec - start.tv_sec) * 1e6 + (end.tv_nsec - start.tv_nsec) / 1e3;
+            fprintf(f, "%.0Lf ", duree);
+            fprintf(f, "\n");
+        }
+    fclose(f);
+    return EXIT_SUCCESS;
+}
+
+int syncro() {
+    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * (NOMBRE_PREMIER - 2));
+    if (liste == NULL) {
+        perror("malloc");
+        return EXIT_FAILURE;
+    }
+    int nb = ceil(sqrt(NOMBRE_PREMIER));
+    for (int i = 0; i < NOMBRE_PREMIER - 2; i++) {
+        liste[i] = i + 2;
+    }
+    for (int i = 2; i <= nb; i++) {
+        if (liste[i - 2] != -1) {
+            for (int j = i * i; j < NOMBRE_PREMIER; j += i) {
+                liste[j - 2] = -1;
+            }
+        }
+    }
+    free(liste);
+    return EXIT_SUCCESS;
+}
+
+
+
+void *thread_action_opti(void *p) {
+    param_thread *param = (param_thread *)p;
+    while (1) {
+        P(param->i);
+        if (param->iteration == -1)
+            break;
+        for (int i = param->iteration * param->iteration + param->i * param->iteration; i < NOMBRE_PREMIER; i += param->iteration * NOMBRE_THREAD * 2) {
+            param->tab_addr[i / 2] = -1;
+        }
+        V(NOMBRE_THREAD);
+    }
+    pthread_exit(NULL);
+}
+
+void create_threads_opti(param_thread *param, pthread_t *threads) {
+    for (int i = 0; i < NOMBRE_THREAD; i++) {
+        if (pthread_create(&threads[i], NULL, thread_action_opti, (void *)&param[i])) {
+            perror("Erreur création thread");
+            exit(1);
+        }
+    }
+}
+
+int thread_opti() {
+     param_thread *params = (param_thread *)malloc(sizeof(param_thread) * NOMBRE_THREAD);
     pthread_t *threads = (pthread_t *)malloc(sizeof(pthread_t) * NOMBRE_THREAD);
     if (params == NULL || threads == NULL) {
         perror("malloc");
@@ -85,12 +156,92 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[i], NULL);
     }
 
-    for (int i = 0; i < NOMBRE_PREMIER - 2; i++) {
-        if (liste[i] != -1) {
-            printf("Nombre premier: %u\n", liste[i]);
+    detruire_semaphore();
+    free(threads);
+    free(params);
+    free(liste);
+    return EXIT_SUCCESS;
+}
+
+int syncro_opti() {
+    int max = NOMBRE_PREMIER / 2;
+    if (NOMBRE_PREMIER % 2 == 1) {
+        max++;
+    }
+    int liste[max];
+    liste[0] = 2;
+    int nb = ceil(sqrt(NOMBRE_PREMIER));
+    for (int i = 1; i < max; i++) {
+        liste[i] = 1 + i * 2;
+    }
+    for (int i = 3; i <= nb; i += 2) {
+        if (liste[i / 2] != -1) {
+            for (int j = i * i; j <= NOMBRE_PREMIER; j += i * 2) {
+                liste[j / 2] = -1;
+            }
         }
     }
+    return EXIT_SUCCESS;
+}
 
+
+int thread() {
+    param_thread *params = (param_thread *)malloc(sizeof(param_thread) * NOMBRE_THREAD);
+    pthread_t *threads = (pthread_t *)malloc(sizeof(pthread_t) * NOMBRE_THREAD);
+    if (params == NULL || threads == NULL) {
+        perror("malloc");
+        free(params);
+        free(threads);
+        return EXIT_FAILURE;
+    }
+
+    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * (NOMBRE_PREMIER - 2));
+    if (liste == NULL) {
+        perror("malloc");
+        free(params);
+        free(threads);
+        return EXIT_FAILURE;
+    }
+
+    for (int i = 0; i < NOMBRE_PREMIER - 2; i++) {
+        liste[i] = i + 2;
+    }
+
+    for (int i = 0; i < NOMBRE_THREAD; i++) {
+        params[i].tab_addr = liste;
+        params[i].i = i;
+        params[i].iteration = 0;
+    }
+
+    int sigma = init_semaphore();
+    if (sigma != 0) {
+        perror("init_semaphore");
+        free(params);
+        free(threads);
+        free(liste);
+        return EXIT_FAILURE;
+    }
+
+    create_threads(params, threads);
+
+    int nb = ceil(sqrt(NOMBRE_PREMIER));
+
+    for (int i = 2; i <= nb; i++) {
+        if (liste[i - 2] != -1) {
+            for (int k = 0; k < NOMBRE_THREAD; k++) {
+                params[k].iteration = i;
+                V(k);
+            }
+            for (int k = 0; k < NOMBRE_THREAD; k++) {
+                P(NOMBRE_THREAD);
+            }
+        }
+    }
+    for (int i = 0; i < NOMBRE_THREAD; i++) {
+        params[i].iteration = -1;
+        V(i);
+        pthread_join(threads[i], NULL);
+    }
     detruire_semaphore();
     free(threads);
     free(params);
@@ -129,7 +280,7 @@ int init_semaphore(void) {
         return -1;
     }
     // Générer une clé unique pour les sémaphores
-    key_t key = ftok("TD8_threaded.c", 'J');
+    key_t key = ftok("comparaison_algo.c", 'J');
     if (key == -1) {
         perror("ftok");
         return -2;
