@@ -15,6 +15,7 @@ for i in $(seq 1 $MAX_THREADS); do
     gcc comparaison_algo.c
 
     # Exécuter le programme et rediriger la sortie vers le fichier correspondant
-    ./a.out > "thread_${i}.csv"
+    ./a.out
+	mv out.csv "thread_${i}.cvs"
 done
 
