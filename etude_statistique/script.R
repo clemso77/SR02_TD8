@@ -23,20 +23,20 @@ for (type in types_algos) {
 color=c("red", "blue", "green", "purple")
 
 
-plot(data$x, data$basique_4000000, type="b", col=color[4], lwd=2, pch=15,
-     xlab="Nb thread (0 = pas multithreadé)", ylab="Temps d'execution moyen (en ms)",
-     ylim=range(0, max(data$basique_4000000)),
+plot(data$x, log(data$basique_4000000), type="b", col=color[4], lwd=2, pch=15,
+     xlab="Nb thread (0 = pas multithreadé)", ylab="Logarithme des Temps d'execution moyen (en ms)",
+     ylim=range(6, max(log(data$basique_4000000))),
      xlim=c(0, 10))
 k <- 3
 for (type in types_algos) {
   for (i in seq(1, k)) {
     var <- sprintf("%s_%d", type, premiers_max[i])
-    lines(data$x, data[[var]], 
+    lines(data$x, log(data[[var]]), 
           type="b", col=color[i], lwd=2, pch= if (type == "opti") 19 else 15)
   }
   k <- k + 1
 }
-legend(7.5, 25000,
+legend(7.5, 9,
        c(
          "basique 500000",
          "basique 1000000",

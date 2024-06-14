@@ -36,9 +36,17 @@ Voir code
 
 ## Tâche 5 
 
-Voici un graphe de nos résultats et le code R de l'analyse ensuite : 
+Voici un graphe de nos résultats
 
 ![Graphe des résultats](./etude_statistique/Rplot.png)
+
+Voici un graphe à échelle logarithmique pour pouvoir analyser les variations 
+
+![Graphe des résultats logarithmiques](./etude_statistique/Rplot01.png)
+
+On observe que les versions optimales sont bien plus performantes que les versions basiques de l'algorithme. De plus, il semblerait que le nombre de threads optimal est 4 (pas besoin de trop de ressources et bonnes performances). 
+
+Finalement, voila le code R de ayant généré les graphes : 
 
  ```r
 types_algos <- c("basique", "opti")
