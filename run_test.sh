@@ -16,6 +16,6 @@ for i in $(seq 1 $MAX_THREADS); do
 
     # Exécuter le programme et rediriger la sortie vers le fichier correspondant
     ./a.out
-	mv out.csv "thread_${i}.cvs"
+	mv out.csv "thread_${i}.csv"
 done
 

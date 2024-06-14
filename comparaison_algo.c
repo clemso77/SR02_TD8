@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < REPETITION; j++) {
             struct timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
-			thread_opti();
+			thread();
             clock_gettime(CLOCK_MONOTONIC, &end);
             long double duree = (end.tv_sec - start.tv_sec) * 1e6 + (end.tv_nsec - start.tv_nsec) / 1e3;
             fprintf(f, "%.0Lf ", duree);
