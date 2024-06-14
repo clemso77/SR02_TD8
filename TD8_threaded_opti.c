@@ -31,10 +31,10 @@ int init_semaphore();
 void *thread_action_opti(void *p) {
     param_thread *param = (param_thread *)p;
     while (1) {
-        P(param->i);
+        P(param->i/2);
         if (param->iteration == -1)
             break;
-        for (int i = param->iteration * param->iteration + param->i * param->iteration; i < NOMBRE_PREMIER; i += param->iteration * NOMBRE_THREAD * 2) {
+        for (int i = param->iteration * param->iteration + param->i * param->iteration; i <= NOMBRE_PREMIER; i += param->iteration * NOMBRE_THREAD * 2) {
             param->tab_addr[i / 2] = -1;
         }
         V(NOMBRE_THREAD);
@@ -53,9 +53,9 @@ void create_threads_opti(param_thread *param, pthread_t *threads) {
 
 int main(int argc, char *argv[]) {
     int max = NOMBRE_PREMIER / 2;
-    if (NOMBRE_PREMIER % 2 == 1)
+    if (NOMBRE_PREMIER % 2 == 1) {
         max++;
-
+    }
     param_thread *params = (param_thread *)malloc(sizeof(param_thread) * NOMBRE_THREAD);
     pthread_t *threads = (pthread_t *)malloc(sizeof(pthread_t) * NOMBRE_THREAD);
     if (params == NULL || threads == NULL) {
@@ -64,8 +64,7 @@ int main(int argc, char *argv[]) {
         free(threads);
         return EXIT_FAILURE;
     }
-
-    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * max);
+    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * (max));
     if (liste == NULL) {
         perror("malloc");
         free(params);
@@ -73,18 +72,17 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     liste[0] = 2;
-
-    // Initialisation du tableau
+    int nb = ceil(sqrt(NOMBRE_PREMIER));
     for (int i = 1; i < max; i++) {
         liste[i] = 1 + i * 2;
     }
-
-    // Initialisation des paramètres de nos threads
+     
     for (int i = 0; i < NOMBRE_THREAD; i++) {
         params[i].tab_addr = liste;
-        params[i].i = i;
+        params[i].i = i*2;
         params[i].iteration = 0;
     }
+    
 
     int sigma = init_semaphore();
     if (sigma != 0) {
@@ -94,10 +92,9 @@ int main(int argc, char *argv[]) {
         free(liste);
         return EXIT_FAILURE;
     }
-
-    int nb = ceil(sqrt(NOMBRE_PREMIER));
+    
     create_threads_opti(params, threads);
-
+    
     for (int i = 3; i <= nb; i += 2) {
         if (liste[i / 2] != -1) {
             for (int k = 0; k < NOMBRE_THREAD; k++) {
@@ -109,18 +106,17 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
+    for (int i = 0; i < max; i++) {
+        if (liste[i] != -1) {
+            printf("Nombre premier: %u\n", liste[i]);
+        }
+    }
     for (int i = 0; i < NOMBRE_THREAD; i++) {
         params[i].iteration = -1;
         V(i);
         pthread_join(threads[i], NULL);
     }
 
-    for (int i = 0; i < max; i++) {
-        if (liste[i] != -1) {
-            printf("Nombre premier: %u\n", liste[i]);
-        }
-    }
 
     detruire_semaphore();
     free(threads);

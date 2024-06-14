@@ -26,7 +26,6 @@ void *thread_action_opti(void *p);
 void creat_thread_opti(param_thread *param, pthread_t *threads);
 int thread();
 int thread_opti();
-int thread_opti();
 int syncro_opti();
 void create_threads(param_thread *param, pthread_t *threads);
 int V();
@@ -42,7 +41,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < REPETITION; j++) {
             struct timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
-			thread_opti();
+			syncro_opti();
             clock_gettime(CLOCK_MONOTONIC, &end);
             long double duree = (end.tv_sec - start.tv_sec) * 1e6 + (end.tv_nsec - start.tv_nsec) / 1e3;
             fprintf(f, "%.0Lf ", duree);
@@ -75,13 +74,14 @@ int syncro() {
 
 
 
+
 void *thread_action_opti(void *p) {
     param_thread *param = (param_thread *)p;
     while (1) {
-        P(param->i);
+        P(param->i/2);
         if (param->iteration == -1)
             break;
-        for (int i = param->iteration * param->iteration + param->i * param->iteration; i < NOMBRE_PREMIER; i += param->iteration * NOMBRE_THREAD * 2) {
+        for (int i = param->iteration * param->iteration + param->i * param->iteration; i <= NOMBRE_PREMIER; i += param->iteration * NOMBRE_THREAD * 2) {
             param->tab_addr[i / 2] = -1;
         }
         V(NOMBRE_THREAD);
@@ -99,7 +99,11 @@ void create_threads_opti(param_thread *param, pthread_t *threads) {
 }
 
 int thread_opti() {
-     param_thread *params = (param_thread *)malloc(sizeof(param_thread) * NOMBRE_THREAD);
+    int max = NOMBRE_PREMIER / 2;
+    if (NOMBRE_PREMIER % 2 == 1) {
+        max++;
+    }
+    param_thread *params = (param_thread *)malloc(sizeof(param_thread) * NOMBRE_THREAD);
     pthread_t *threads = (pthread_t *)malloc(sizeof(pthread_t) * NOMBRE_THREAD);
     if (params == NULL || threads == NULL) {
         perror("malloc");
@@ -107,24 +111,25 @@ int thread_opti() {
         free(threads);
         return EXIT_FAILURE;
     }
-
-    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * (NOMBRE_PREMIER - 2));
+    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * (max));
     if (liste == NULL) {
         perror("malloc");
         free(params);
         free(threads);
         return EXIT_FAILURE;
     }
-
-    for (int i = 0; i < NOMBRE_PREMIER - 2; i++) {
-        liste[i] = i + 2;
+    liste[0] = 2;
+    int nb = ceil(sqrt(NOMBRE_PREMIER));
+    for (int i = 1; i < max; i++) {
+        liste[i] = 1 + i * 2;
     }
-
+     
     for (int i = 0; i < NOMBRE_THREAD; i++) {
         params[i].tab_addr = liste;
-        params[i].i = i;
+        params[i].i = i*2;
         params[i].iteration = 0;
     }
+    
 
     int sigma = init_semaphore();
     if (sigma != 0) {
@@ -134,13 +139,11 @@ int thread_opti() {
         free(liste);
         return EXIT_FAILURE;
     }
-
-    create_threads(params, threads);
-
-    int nb = ceil(sqrt(NOMBRE_PREMIER));
-
-    for (int i = 2; i <= nb; i++) {
-        if (liste[i - 2] != -1) {
+    
+    create_threads_opti(params, threads);
+    
+    for (int i = 3; i <= nb; i += 2) {
+        if (liste[i / 2] != -1) {
             for (int k = 0; k < NOMBRE_THREAD; k++) {
                 params[k].iteration = i;
                 V(k);
@@ -155,7 +158,6 @@ int thread_opti() {
         V(i);
         pthread_join(threads[i], NULL);
     }
-
     detruire_semaphore();
     free(threads);
     free(params);
@@ -168,7 +170,7 @@ int syncro_opti() {
     if (NOMBRE_PREMIER % 2 == 1) {
         max++;
     }
-    int liste[max];
+    unsigned int *liste = (unsigned int *)malloc(sizeof(unsigned int) * (max));
     liste[0] = 2;
     int nb = ceil(sqrt(NOMBRE_PREMIER));
     for (int i = 1; i < max; i++) {
@@ -181,6 +183,7 @@ int syncro_opti() {
             }
         }
     }
+    free(liste);
     return EXIT_SUCCESS;
 }
 
