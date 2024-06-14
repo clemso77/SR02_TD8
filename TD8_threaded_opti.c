@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#define NOMBRE_THREAD 7
+#define NOMBRE_THREAD 6
 #define NOMBRE_PREMIER 100
 
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
             printf("Nombre premier: %u\n", i*2 +1);
         }
     }
-    travailler=1;
+    travailler=0;
     free(threads);
     free(params);
     free(liste);

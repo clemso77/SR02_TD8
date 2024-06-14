@@ -10,8 +10,8 @@
 #include <sys/ipc.h>
 #include <sys/sem.h> 
 
-#define NOMBRE_THREAD 1
-#define NOMBRE_PREMIER 4000000
+#define NOMBRE_THREAD 7
+#define NOMBRE_PREMIER 2000000
 #define REPETITION 100
 #define N_SEM NOMBRE_THREAD 
 
@@ -35,10 +35,11 @@ int syncro();
 
 int main(int argc, char *argv[]) {
     FILE *f = fopen("out.csv", "w");
+    fprintf(f, "data\n");
         for (int j = 0; j < REPETITION; j++) {
             struct timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
-			thread();
+			thread_opti();
             clock_gettime(CLOCK_MONOTONIC, &end);
             long double duree = (end.tv_sec - start.tv_sec) * 1e6 + (end.tv_nsec - start.tv_nsec) / 1e3;
             fprintf(f, "%.0Lf ", duree);
@@ -147,7 +148,7 @@ int thread_opti() {
     for (int i = 0; i < NOMBRE_THREAD; i++){
         pthread_join(threads[i], NULL);
     }
-    travailler=1;
+    travailler=0;
     free(threads);
     free(params);
     free(liste);
