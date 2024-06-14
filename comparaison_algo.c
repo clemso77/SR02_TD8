@@ -11,7 +11,7 @@
 #include <sys/sem.h> 
 
 #define NOMBRE_THREAD 7
-#define NOMBRE_PREMIER 2000000
+#define NOMBRE_PREMIER 500000
 #define REPETITION 100
 #define N_SEM NOMBRE_THREAD 
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < REPETITION; j++) {
             struct timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
-			thread();
+			syncro();
             clock_gettime(CLOCK_MONOTONIC, &end);
             long double duree = (end.tv_sec - start.tv_sec) * 1e6 + (end.tv_nsec - start.tv_nsec) / 1e3;
             fprintf(f, "%.0Lf ", duree);
